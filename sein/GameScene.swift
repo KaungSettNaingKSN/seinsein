@@ -15,8 +15,9 @@ class GameScene: SKScene {
         background.zPosition = -1
         addChild(background)
         
-        // Tree images
-        let treeImages = ["mango1", "magyi2", "magyi1", "magyi3", "mango3", "mango1", "magyi3", "magyi3"]
+        let savedTreeNames = UserDefaults.standard.array(forKey: "savedTreeStates") as? [String]
+            
+        let treeImages = savedTreeNames ?? ["mango1", "magyi2", "magyi1", "magyi3", "mango3", "mango1", "magyi3", "magyi3"]
         
         // Tree positions
         let treePositions = [
@@ -66,9 +67,31 @@ class GameScene: SKScene {
                 let tree = trees[index]
                 startRainEffect(over: tree)
             }
+        } else if trees.contains(touchedNode as! SKSpriteNode) {
+            // Check if touched node is a tree
+            if let treeName = touchedNode.name {
+                showTreeNameLabel(treeName, at: touchedNode.position)
+            }
         }
     }
     
+    func showTreeNameLabel(_ name: String, at position: CGPoint) {
+        let label = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        label.text = name
+        label.fontSize = 20
+        label.fontColor = .white
+        label.position = CGPoint(x: position.x, y: position.y + 50)
+        label.zPosition = 4
+        addChild(label)
+        
+        // Fade out and remove after 2 seconds
+        label.run(SKAction.sequence([
+            SKAction.wait(forDuration: 1.5),
+            SKAction.fadeOut(withDuration: 0.5),
+            SKAction.removeFromParent()
+        ]))
+    }
+
     func showTreeWaterDropButtons() {
         treeWaterDrops.forEach { $0.removeFromParent() }
         treeWaterDrops.removeAll()
@@ -125,10 +148,17 @@ class GameScene: SKScene {
             let newNumber = number + 1
             let newName = "\(letters)\(newNumber)"
             
-            // Check if the new texture exists before applying it
+            // Update texture
             let newTexture = SKTexture(imageNamed: newName)
             tree.texture = newTexture
             tree.name = newName
+            
+            // Save the updated tree state
+            saveTreeStates()
         }
+    }
+    func saveTreeStates() {
+        let treeNames = trees.map { $0.name ?? "" }
+        UserDefaults.standard.set(treeNames, forKey: "savedTreeStates")
     }
 }
